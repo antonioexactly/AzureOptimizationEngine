@@ -227,22 +227,7 @@ do {
         $logAnalyticsReuse = $true
     }
 
-    Write-Host "...for the Azure SQL Server..." -ForegroundColor Green
-    $sql = Get-AzSqlServer -ResourceGroupName $resourceGroupName -Name $sqlServerName -ErrorAction SilentlyContinue
-    if ($null -eq $sql) {
-
-        $SqlServerNameAvailabilityUriPath = "/subscriptions/$subscriptionId/providers/Microsoft.Sql/checkNameAvailability?api-version=2014-04-01"
-        $body = "{`"name`": `"$sqlServerName`", `"type`": `"Microsoft.Sql/servers`"}"
-        $sqlNameResult = (Invoke-AzRestMethod -Path $SqlServerNameAvailabilityUriPath -Method POST -Payload $body).Content | ConvertFrom-Json
-        
-        if (-not($sqlNameResult.available)) {
-            $nameAvailable = $false
-            Write-Host "$($sqlNameResult.message) ($sqlServerName)" -ForegroundColor Red
-        }
-    }
-    else {
-        Write-Host "(The SQL Server was already deployed)" -ForegroundColor Green
-    }
+   
 }
 while (-not($nameAvailable))
 
