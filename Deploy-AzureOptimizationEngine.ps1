@@ -338,36 +338,6 @@ if ("Y", "y" -contains $continueInput) {
 
     $runAsConnection = Get-AzAutomationConnection -ResourceGroupName $resourceGroupName -AutomationAccountName $automationAccountName -Name $ConnectionAssetName -ErrorAction SilentlyContinue
     
-    if ($null -eq $runAsConnection) {
-
-        $runasAppName = "$automationAccountName-runasaccount"
-
-        $CertificateName = $automationAccountName + $CertificateAssetName
-        $PfxCertPathForRunAsAccount = Join-Path $env:TEMP ($CertificateName + ".pfx")
-        $PfxCertPlainPasswordForRunAsAccount = -join ((65..90) + (97..122) | Get-Random -Count 20 | % {[char]$_})
-        $CerCertPathForRunAsAccount = Join-Path $env:TEMP ($CertificateName + ".cer")
-
-        try {
-            CreateSelfSignedCertificate $CertificateName $PfxCertPlainPasswordForRunAsAccount $PfxCertPathForRunAsAccount $CerCertPathForRunAsAccount $SelfSignedCertNoOfMonthsUntilExpired   
-        }
-        catch {
-            Write-Host "Failed to create self-signed certificate. Please, run this script in an elevated prompt." -ForegroundColor Red
-            throw "Terminating due to lack of administrative privileges."
-        }
-
-        $PfxCert = New-Object -TypeName System.Security.Cryptography.X509Certificates.X509Certificate2 -ArgumentList @($PfxCertPathForRunAsAccount, $PfxCertPlainPasswordForRunAsAccount)
-        $ApplicationId = CreateServicePrincipal $PfxCert $runasAppName
-        
-        CreateAutomationCertificateAsset $resourceGroupName $automationAccountName $CertificateAssetName $PfxCertPathForRunAsAccount $PfxCertPlainPasswordForRunAsAccount $true
-        
-        $ConnectionFieldValues = @{"ApplicationId" = $ApplicationId; "TenantId" = $ctx.Subscription.TenantId; "CertificateThumbprint" = $PfxCert.Thumbprint; "SubscriptionId" = $ctx.Subscription.Id}
-
-        CreateAutomationConnectionAsset $resourceGroupName $automationAccountName $ConnectionAssetName $ConnectionTypeName $ConnectionFieldValues
-    }
-    else {
-        Write-Host "(The Automation Run As account was already deployed)" -ForegroundColor Green
-    }
-
     Write-Host "Deploying SQL Database model..." -ForegroundColor Green
     
     $bstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($sqlPass)
